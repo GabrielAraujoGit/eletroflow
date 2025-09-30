@@ -14,6 +14,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
+
 def normalizar_chave(texto):
     texto = ''.join(c for c in unicodedata.normalize('NFD', texto)
                     if unicodedata.category(c) != 'Mn')
@@ -589,7 +590,7 @@ class SistemaPedidos:
             # formas de pagamento (somente se houver cartão preenchido)
             if tem_cartao:
                 elementos.append(Paragraph("Formas de Pagamento e Condições", estilos['Heading3']))
-                formas = [[""]]
+                formas = [["À vista ou em até 3x sem juros no cartão - Orçamento válido por 10 dias"]]
                 t_cond = Table(formas, colWidths=[530])
                 t_cond.setStyle(TableStyle([
                     ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
@@ -606,76 +607,154 @@ class SistemaPedidos:
 
 
     def importar_dados(self, tipo="clientes"):
-            caminho = filedialog.askopenfilename(
-                filetypes=[("Planilhas", "*.xlsx *.csv"), ("Todos", "*.*")]
-            )
-            if not caminho:
-                return
+    
+                caminho = filedialog.askopenfilename(
+                    filetypes=[("Planilhas", "*.xlsx *.csv"), ("Todos", "*.*")]
+                )
+                if not caminho:
+                    return
 
-            try:
-                # Detecta extensão e lê dados
-                if caminho.endswith(".xlsx"):
-                    wb = openpyxl.load_workbook(caminho)
-                    ws = wb.active
-                    cabecalho = [cell.value for cell in next(ws.iter_rows(min_row=1, max_row=1))]
-                    linhas = [[cell.value for cell in row] for row in ws.iter_rows(min_row=2)]
-                else:  # CSV
-                    with open(caminho, mode='r', encoding='utf-8') as arquivo_csv:
-                        leitor = csv.reader(arquivo_csv)
-                        cabecalho = next(leitor)
-                        linhas = list(leitor)
+                try:
+                    # --- ler arquivo (xlsx ou csv) ---
+                    if caminho.lower().endswith(('.xlsx', '.xlsm', '.xltx', '.xltm')):
+                        wb = openpyxl.load_workbook(caminho, data_only=True)
+                        ws = wb.active
+                        rows = list(ws.iter_rows(values_only=True))
+                        if not rows:
+                            messagebox.showerror("Erro", "Arquivo vazio")
+                            return
+                        header = [ (str(c) if c is not None else "").strip() for c in rows[0] ]
+                        data_rows = [ list(row) for row in rows[1:] ]
+                    else:
+                        # CSV: tenta descobrir delimitador e lê
+                        with open(caminho, newline='', encoding='utf-8') as f:
+                            sample = f.read(2048)
+                            f.seek(0)
+                            try:
+                                dialect = csv.Sniffer().sniff(sample, delimiters=";,")
+                                delim = dialect.delimiter
+                            except Exception:
+                                delim = ';'
+                            reader = csv.reader(f, delimiter=delim)
+                            header = [ (str(c) if c is not None else "").strip() for c in next(reader) ]
+                            data_rows = [row for row in reader]
 
-                # Colunas esperadas no arquivo
-                colunas_para_extrair = [
-                    'Cliente', 
-                    'CNPJ', 
-                    'Contato /',   # mapeado para telefone
-                    'Cidade', 
-                    'Região'       # mapeado para estado
-                ]
+                    # --- helpers ---
+                    def norm(s):
+                        return ''.join(c for c in unicodedata.normalize('NFD', s or '') if unicodedata.category(c) != 'Mn').lower().strip()
 
-                # Mapeia colunas do arquivo -> banco de dados
-                mapeamento = {}
-                for db_col, csv_col in zip(
-                    ['razao_social', 'cnpj', 'telefone', 'cidade', 'estado'],
-                    colunas_para_extrair
-                ):
-                    try:
-                        mapeamento[db_col] = cabecalho.index(csv_col)
-                    except ValueError:
-                        messagebox.showerror("Erro de Coluna", f"A coluna '{csv_col}' não foi encontrada no arquivo.")
+                    header_norm = [norm(h) for h in header]
+
+                    def find_index(*patterns):
+                        for pat in patterns:
+                            for i, h in enumerate(header_norm):
+                                if pat in h:
+                                    return i
+                        return None
+
+                    # ---------- importar clientes ----------
+                    if tipo == "clientes":
+                        idx_razao = find_index('razao', 'cliente', 'empresa', 'nome')
+                        idx_cnpj  = find_index('cnpj')
+                        idx_tel   = find_index('telefone', 'contato', 'tel')
+                        idx_cidade= find_index('cidade')
+                        idx_estado= find_index('estado', 'regiao', 'região')
+
+                        if idx_razao is None or idx_cnpj is None:
+                            messagebox.showerror("Erro de Coluna", "Arquivo de clientes precisa conter pelo menos as colunas 'Cliente/Razão' e 'CNPJ'.")
+                            return
+
+                        importados = 0
+                        for row in data_rows:
+                            try:
+                                razao = str(row[idx_razao]).strip() if idx_razao < len(row) and row[idx_razao] is not None else ''
+                                cnpj  = str(row[idx_cnpj]).strip()  if idx_cnpj < len(row) and row[idx_cnpj] is not None else ''
+                                telefone = str(row[idx_tel]).strip() if idx_tel is not None and idx_tel < len(row) and row[idx_tel] is not None else ''
+                                cidade = str(row[idx_cidade]).strip() if idx_cidade is not None and idx_cidade < len(row) and row[idx_cidade] is not None else ''
+                                estado = str(row[idx_estado]).strip() if idx_estado is not None and idx_estado < len(row) and row[idx_estado] is not None else ''
+
+                                if not razao or not cnpj:
+                                    continue
+
+                                self.cursor.execute('''
+                                    INSERT INTO clientes (razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, email)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                ''', (razao, cnpj, '', '', cidade, estado, '', telefone, ''))
+                                importados += 1
+                            except sqlite3.IntegrityError:
+                                # duplicado: ignora
+                                continue
+
+                        self.conn.commit()
+                        messagebox.showinfo("Sucesso", f"{importados} clientes importados com sucesso!")
+                        self.carregar_clientes()
+                        self.carregar_combos_pedido()
                         return
 
-                # Insere dados
-                clientes_importados = 0
-                for linha in linhas:
-                    try:
-                        razao_social = linha[mapeamento['razao_social']] or ''
-                        cnpj = linha[mapeamento['cnpj']] or ''
-                        telefone = linha[mapeamento['telefone']] or ''
-                        cidade = linha[mapeamento['cidade']] or ''
-                        estado = linha[mapeamento['estado']] or ''
-                        
-                        if not razao_social or not cnpj:
-                            continue  # pula registros inválidos
-                        
-                        self.cursor.execute('''
-                            INSERT INTO clientes (razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, email)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (razao_social, cnpj, '', '', cidade, estado, '', telefone, ''))
-                        clientes_importados += 1
-                    except sqlite3.IntegrityError:
-                        # ignora duplicados de CNPJ
-                        continue
+                    # ---------- importar produtos ----------
+                    if tipo == "produtos":
+                        idx_codigo = find_index('codigo', 'cod', 'produto_id', 'id')
+                        idx_desc   = find_index('descricao', 'descri', 'desc', 'produto', 'nome')
+                        idx_volt   = find_index('voltagem', 'voltage', 'voltag')
+                        idx_valor  = find_index('valor_unitario', 'valor unitario', 'valor', 'preco', 'price', 'unitario')
+                        idx_icms   = find_index('icms')
+                        idx_ipi    = find_index('ipi')
+                        idx_pis    = find_index('pis')
+                        idx_cofins = find_index('cofins', 'cofins%')
 
-                self.conn.commit()
-                messagebox.showinfo("Sucesso", f"{clientes_importados} clientes importados com sucesso!")
-                self.carregar_clientes()
-                self.carregar_combos_pedido()
+                        if idx_codigo is None or idx_desc is None or idx_valor is None:
+                            messagebox.showerror("Erro de Coluna", "Arquivo de produtos precisa conter ao menos 'codigo', 'descricao' e 'preco/valor'.")
+                            return
 
-            except Exception as e:
-                messagebox.showerror("Erro", f"Falha ao importar clientes: {e}")
+                        def to_float_cell(r, idx):
+                            if idx is None or idx >= len(r): return 0.0
+                            v = r[idx]
+                            if v is None: return 0.0
+                            s = str(v).replace('R$', '').replace('%', '').replace(',', '.').strip()
+                            try:
+                                return float(s)
+                            except:
+                                return 0.0
 
+                        importados = 0
+                        for row in data_rows:
+                            try:
+                                codigo = str(row[idx_codigo]).strip() if idx_codigo < len(row) and row[idx_codigo] is not None else ''
+                                descricao = str(row[idx_desc]).strip() if idx_desc < len(row) and row[idx_desc] is not None else ''
+                                voltagem = str(row[idx_volt]).strip() if idx_volt is not None and idx_volt < len(row) and row[idx_volt] is not None else ''
+                                valor_unitario = to_float_cell(row, idx_valor)
+                                aliq_icms = to_float_cell(row, idx_icms)
+                                aliq_ipi  = to_float_cell(row, idx_ipi)
+                                aliq_pis  = to_float_cell(row, idx_pis)
+                                aliq_cofins = to_float_cell(row, idx_cofins)
+
+                                if not codigo or not descricao:
+                                    continue
+
+                                self.cursor.execute('''
+                                    INSERT INTO produtos (codigo, descricao, voltagem, valor_unitario, aliq_icms, aliq_ipi, aliq_pis, aliq_cofins)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                ''', (codigo, descricao, voltagem, valor_unitario, aliq_icms, aliq_ipi, aliq_pis, aliq_cofins))
+                                importados += 1
+                            except sqlite3.IntegrityError:
+                                # ignora duplicados
+                                continue
+                            except Exception:
+                                # pula linha problemática
+                                continue
+
+                        self.conn.commit()
+                        messagebox.showinfo("Sucesso", f"{importados} produtos importados com sucesso!")
+                        self.carregar_produtos()
+                        self.carregar_combos_pedido()
+                        return
+
+                    # tipo inválido
+                    messagebox.showerror("Tipo inválido", f"Tipo de importação '{tipo}' não suportado.")
+                    return
+
+                except Exception as e:
+                    messagebox.showerror("Erro", f"Falha ao importar: {e}")
 
     
     # ------------------- Export Excel ----------------    -
