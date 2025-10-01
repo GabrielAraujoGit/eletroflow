@@ -682,6 +682,29 @@ class SistemaPedidos:
             if numero_pedido is None:
                 numero_pedido = self.label_numero_orc.cget("text")
 
+
+
+            # -------- Padronização de tabelas --------
+            COR_CABECALHO = colors.HexColor("#1E3A8A")  # Azul escuro
+            COR_TEXTO_CAB = colors.white
+            COR_GRID = colors.HexColor("#D1D5DB")
+
+            def estilo_tabela(tabela, header=True):
+                estilos = [
+                    ("GRID", (0, 0), (-1, -1), 0.5, COR_GRID),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ]
+                if header:
+                    estilos += [
+                        ("BACKGROUND", (0, 0), (-1, 0), COR_CABECALHO),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), COR_TEXTO_CAB),
+                        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ]
+                tabela.setStyle(TableStyle(estilos))
+                return tabela
+
             # Buscar dados do pedido principal
             self.cursor.execute('''
                 SELECT p.data_pedido, c.razao_social, c.cnpj, c.endereco, c.cidade, c.estado,
@@ -759,12 +782,7 @@ class SistemaPedidos:
                 ["Status:", status],
             ]
             t_info = Table(info_cliente, colWidths=[100, 380])
-            t_info.setStyle(TableStyle([
-                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-            ]))
+            estilo_tabela(t_info, header=False)
             elementos.append(t_info)
             elementos.append(Spacer(1, 20))
 
@@ -781,14 +799,7 @@ class SistemaPedidos:
                 ])
 
             t = Table(tabela, colWidths=[70, 230, 50, 90, 90], repeatRows=1, hAlign="CENTER")
-            t.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, 0), 10),
-            ]))
+            estilo_tabela(t, header=True)
             elementos.append(t)
             elementos.append(Spacer(1, 20))
 
@@ -806,14 +817,7 @@ class SistemaPedidos:
             GRID_COLOR = colors.HexColor("#D1D5DB")
                 
             t_tot = Table(totais, colWidths=[400, 100], hAlign="RIGHT")
-            t_tot.setStyle(TableStyle([
-            ('GRID', (0,0), (-1,-1), 0.5, GRID_COLOR),
-            ('ALIGN', (1,0), (1,-1), 'RIGHT'),
-            ('FONTNAME', (0,0), (-1,-2), 'Helvetica'),
-            ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold'),
-            ('TEXTCOLOR', (0,-1), (-1,-1), colors.white),
-            ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor("#0073FF")),
-        ]))
+            estilo_tabela(t_tot, header=True)   
 
             elementos.append(t_tot)
             elementos.append(Spacer(1, 20))
@@ -990,12 +994,14 @@ class SistemaPedidos:
 
                 except Exception as e:
                     messagebox.showerror("Erro", f"Falha ao importar: {e}")
-
+    
+    
     def exportar_excel_orcamento(self):
         if not self.combo_cliente.get() or not self.itens_pedido_temp:
             messagebox.showwarning("Atenção", "Selecione um cliente e adicione itens para exportar Excel!")
             return
         
+
         cliente_id = int(self.combo_cliente.get().split(' - ')[0])
         self.cursor.execute('SELECT razao_social, cnpj, cidade, endereco, telefone, email FROM clientes WHERE id = ?', (cliente_id,))
         cliente = self.cursor.fetchone()
