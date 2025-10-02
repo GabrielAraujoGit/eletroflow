@@ -180,55 +180,128 @@ class SistemaPedidos:
     # ------------------- Clientes -------------------
     
     
+        # ------------------- Clientes -------------------
+
     def criar_aba_clientes(self):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="Clientes")
-        form_frame = ttk.LabelFrame(frame, text="Cadastro de Cliente", padding=10)
-        form_frame.pack(fill='x', padx=10, pady=10)
-        
-        labels = ['Razão Social:', 'CNPJ:', 'IE:', 'Endereço:', 'Cidade:', 'Estado:', 'CEP:', 'Telefone:', 'Email:']
-        self.cliente_entries = {}
-        for i, label in enumerate(labels):
-            ttk.Label(form_frame, text=label).grid(row=i//3, column=(i%3)*2, sticky='w', padx=5, pady=5)
-            entry = ttk.Entry(form_frame, width=28)
-            entry.grid(row=i//3, column=(i%3)*2+1, padx=5, pady=5)
-            chave = normalizar_chave(label)
-            self.cliente_entries[chave] = entry
 
-        search_frame = ttk.Frame(frame)
-        search_frame.pack(fill='x', padx=10, pady=5)
-        ttk.Label(search_frame, text="Buscar Cliente:").pack(side='left', padx=5)
-        self.entry_busca_cliente = ttk.Entry(search_frame, width=40)
-        self.entry_busca_cliente.pack(side='left', padx=5)
-        self.entry_busca_cliente.bind("<KeyRelease>", lambda e: self.carregar_clientes(filtro=self.entry_busca_cliente.get()))
+        # --- Barra de botões ---
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', padx=10, pady=5)
 
-        # Permitir duplo clique para editar
-       
-        
-        btn_frame = ttk.Frame(form_frame)
-        btn_frame.grid(row=3, column=0, columnspan=6, pady=10)
-        ttk.Button(btn_frame, text="Cadastrar Cliente", command=self.salvar_cliente).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Novo Cliente", command=self.limpar_cliente).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Importar Arquivo", command=lambda: self.importar_dados("clientes")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Adicionar",bootstyle=SUCCESS, command=self.adicionar_cliente).pack(side='left', padx=5 )
+        ttk.Button(btn_frame, text="Editar", bootstyle=INFO, command=lambda: self.editar_cliente(None)).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Excluir",bootstyle=DANGER,  command=self.excluir_cliente).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Importar Arquivo",bootstyle=WARNING, command=lambda: self.importar_dados("clientes")).pack(side='left', padx=5)
 
-        
+        # --- Lista de clientes ---
         list_frame = ttk.LabelFrame(frame, text="Clientes Cadastrados", padding=10)
         list_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
         cols = ('ID', 'Razão Social', 'CNPJ', 'Cidade', 'Telefone')
-        self.tree_clientes = ttk.Treeview(list_frame, columns=cols, show='headings', height=8)
+        self.tree_clientes = ttk.Treeview(list_frame, columns=cols, show='headings', height=12)
         for col in cols:
             self.tree_clientes.heading(col, text=col)
             self.tree_clientes.column(col, width=140)
+
         scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.tree_clientes.yview)
         self.tree_clientes.configure(yscrollcommand=scrollbar.set)
         self.tree_clientes.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
 
+        # Duplo clique abre visualização
         self.tree_clientes.bind("<Double-1>", self.visualizar_cliente)
 
-
-        
         self.carregar_clientes()
+
+    def adicionar_cliente(self):
+        self.abrir_formulario_cliente()
+
+    def editar_cliente(self, event=None):
+        item = self.tree_clientes.selection()
+        if not item:
+            messagebox.showwarning("Atenção", "Selecione um cliente para editar.")
+            return
+        valores = self.tree_clientes.item(item[0], "values")
+        cliente_id = valores[0]
+        self.cursor.execute("SELECT * FROM clientes WHERE id=?", (cliente_id,))
+        cliente = self.cursor.fetchone()
+        if cliente:
+            self.abrir_formulario_cliente(cliente)
+
+
+    def excluir_cliente(self):
+        item = self.tree_clientes.selection()
+        if not item:
+            messagebox.showwarning("Atenção", "Selecione um cliente para excluir.")
+            return
+
+        valores = self.tree_clientes.item(item[0], "values")
+        cliente_id = valores[0]
+
+        if messagebox.askyesno("Confirmação", "Tem certeza que deseja excluir este cliente?"):
+            try:
+                self.cursor.execute("DELETE FROM clientes WHERE id=?", (cliente_id,))
+                self.conn.commit()
+                self.carregar_clientes()
+                messagebox.showinfo("Sucesso", "Cliente excluído com sucesso!")
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao excluir cliente: {e}")
+
+    def abrir_formulario_cliente(self, cliente=None):
+        """Abre popup para adicionar/editar cliente."""
+        top = tk.Toplevel(self.root)
+        top.title("Cadastro de Cliente")
+        top.geometry("600x400")
+
+        labels = ['Razão Social:', 'CNPJ:', 'IE:', 'Endereço:', 'Cidade:', 'Estado:', 'CEP:', 'Telefone:', 'Email:']
+        entries = {}
+        for i, label in enumerate(labels):
+            ttk.Label(top, text=label).grid(row=i//2, column=(i%2)*2, sticky='w', padx=5, pady=5)
+            entry = ttk.Entry(top, width=28)
+            entry.grid(row=i//2, column=(i%2)*2+1, padx=5, pady=5)
+            chave = normalizar_chave(label)
+            entries[chave] = entry
+
+        # Se for edição, preencher os campos
+        if cliente:
+            keys = ['id','razao_social','cnpj','ie','endereco','cidade','estado','cep','telefone','email']
+            for k, v in zip(keys, cliente):
+                if k in entries:
+                    entries[k].insert(0, v or "")
+
+        def salvar():
+            dados = {k: v.get() for k, v in entries.items()}
+            if not dados['razao_social'] or not dados['cnpj']:
+                messagebox.showwarning("Atenção", "Razão Social e CNPJ são obrigatórios!")
+                return
+            try:
+                if cliente:  # editar
+                    self.cursor.execute('''
+                        UPDATE clientes
+                        SET razao_social=?, cnpj=?, ie=?, endereco=?, cidade=?, estado=?, cep=?, telefone=?, email=?
+                        WHERE id=?
+                    ''', (dados['razao_social'], dados['cnpj'], dados.get('ie'), dados.get('endereco'),
+                        dados.get('cidade'), dados.get('estado'), dados.get('cep'),
+                        dados.get('telefone'), dados.get('email'), cliente[0]))
+                else:  # novo
+                    self.cursor.execute('''
+                        INSERT INTO clientes (razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, email)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (dados['razao_social'], dados['cnpj'], dados.get('ie'), dados.get('endereco'),
+                        dados.get('cidade'), dados.get('estado'), dados.get('cep'),
+                        dados.get('telefone'), dados.get('email')))
+                self.conn.commit()
+                self.carregar_clientes()
+                top.destroy()
+            except sqlite3.IntegrityError:
+                messagebox.showerror("Erro", "CNPJ já cadastrado!")
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao salvar cliente: {e}")
+
+        ttk.Button(top, text="Salvar", command=salvar).grid(row=6, column=0, columnspan=2, pady=10)
+
     def criar_aba_consulta_orcamentos(self):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="Consultar Orçamentos")
@@ -405,20 +478,18 @@ class SistemaPedidos:
         for row in self.cursor.fetchall():
             self.tree_clientes.insert('', 'end', values=row)
 
-    def editar_cliente(self, event):
-            item = self.tree_clientes.selection()
-            if not item: return
-            valores = self.tree_clientes.item(item[0], "values")
-            cliente_id = valores[0]
-            self.cursor.execute("SELECT * FROM clientes WHERE id=?", (cliente_id,))
-            cliente = self.cursor.fetchone()
-            if cliente:
-                keys = ['id','razao_social','cnpj','ie','endereco','cidade','estado','cep','telefone','email']
-                for k, v in zip(keys, cliente):
-                    if k in self.cliente_entries:
-                        self.cliente_entries[k].delete(0, tk.END)
-                        self.cliente_entries[k].insert(0, v or "")
-                self.cliente_edicao_id = cliente_id
+    def editar_cliente(self, event=None):
+        item = self.tree_clientes.selection()
+        if not item:
+            messagebox.showwarning("Atenção", "Selecione um cliente para editar.")
+            return
+        valores = self.tree_clientes.item(item[0], "values")
+        cliente_id = valores[0]
+        self.cursor.execute("SELECT * FROM clientes WHERE id=?", (cliente_id,))
+        cliente = self.cursor.fetchone()
+        if cliente:
+            self.abrir_formulario_cliente(cliente)
+
 
     # ------------------- Produtos -------------------
     def criar_aba_produtos(self):
@@ -605,6 +676,17 @@ class SistemaPedidos:
         self.entry_representante = tb.Entry(header_frame, width=25)
         self.entry_representante.grid(row=0, column=5, padx=5)
 
+        # 👉 Campo de Status
+        tb.Label(header_frame, text="Status:", bootstyle="inverse-primary").grid(row=0, column=6, sticky=W, padx=5)
+        self.combo_status_orc = tb.Combobox(
+            header_frame,
+            values=["Em Aberto", "Aprovado", "Cancelado", "Rejeitado"],
+            width=15,
+            state="readonly"
+        )
+        self.combo_status_orc.set("Em Aberto")  # padrão ao criar novo orçamento
+        self.combo_status_orc.grid(row=0, column=7, padx=5)
+
         # Informações Comerciais
         extra_frame = tb.Labelframe(frame, text="Informações Comerciais", padding=6, bootstyle="info")
         extra_frame.pack(fill='x', padx=10, pady=6)
@@ -656,7 +738,6 @@ class SistemaPedidos:
         self.tree_pedido_items.pack(fill='both', expand=True)
 
         # Totais + ações
-        # Totais + ações
         totals_frame = tb.Labelframe(frame, text="Totais & Ações", padding=6, bootstyle="warning")
         totals_frame.pack(fill='x', padx=10, pady=6)
 
@@ -681,25 +762,25 @@ class SistemaPedidos:
             command=self.limpar_pedido, bootstyle="secondary"
         ).grid(row=0, column=4, padx=8)
 
-        
         tb.Button(
             totals_frame, text="Exportar p/ PDF",
             command=lambda: self.gerar_pdf_orcamento(self.label_numero_orc.cget("text")),
             bootstyle="danger-outline"
         ).grid(row=0, column=6, padx=8)
 
-
         # carregar clientes e produtos nos combos
         self.carregar_combos_pedido()
+
 
     def carregar_orcamento_para_edicao(self, numero_pedido):
         """
         Carrega um orçamento salvo para edição na aba 'Orçamentos'.
         """
-        # Buscar dados principais do pedido (inclui cliente_id)
+        # Buscar dados principais do pedido (inclui cliente_id e status)
         self.cursor.execute('''
-            SELECT p.data_pedido, p.cliente_id, p.valor_produtos, p.valor_icms, p.valor_ipi, p.valor_pis, p.valor_cofins,
-                p.valor_total, p.representante, p.condicoes_pagamento, p.desconto, p.observacoes, p.validade
+            SELECT p.data_pedido, p.cliente_id, p.valor_produtos, p.valor_icms, p.valor_ipi, 
+                p.valor_pis, p.valor_cofins, p.valor_total, p.representante, 
+                p.condicoes_pagamento, p.desconto, p.observacoes, p.validade, p.status
             FROM pedidos p
             WHERE p.numero_pedido = ?
         ''', (numero_pedido,))
@@ -709,7 +790,7 @@ class SistemaPedidos:
             return
 
         (data_pedido, cliente_id, subtotal, icms, ipi, pis, cofins, total,
-        representante, cond_pag, desconto, observacoes, validade) = pedido
+        representante, cond_pag, desconto, observacoes, validade, status) = pedido
 
         # preencher cabeçalho
         try:
@@ -730,6 +811,10 @@ class SistemaPedidos:
         self.entry_desconto.insert(0, str(desconto or 0))
         self.text_obs.delete("1.0", tk.END)
         self.text_obs.insert("1.0", observacoes or "")
+
+        # 👉 preencher o ComboBox de status
+        if hasattr(self, "combo_status_orc"):
+            self.combo_status_orc.set(status or "Em Aberto")
 
         # selecionar cliente no combo (formato: "id - nome")
         self.cursor.execute("SELECT razao_social FROM clientes WHERE id=?", (cliente_id,))
@@ -753,8 +838,16 @@ class SistemaPedidos:
         itens = self.cursor.fetchall()
         for prod_id, codigo, descricao, qtd, valor_unit in itens:
             total_item = (qtd or 0) * (valor_unit or 0)
-            self.tree_pedido_items.insert('', 'end', values=(f"{codigo} - {descricao}", qtd, formatar_moeda(valor_unit), formatar_moeda(total_item)))
-            self.itens_pedido_temp.append({'produto_id': prod_id, 'codigo': codigo, 'descricao': descricao, 'qtd': qtd, 'valor': float(valor_unit)})
+            self.tree_pedido_items.insert('', 'end',
+                values=(f"{codigo} - {descricao}", qtd,
+                        formatar_moeda(valor_unit), formatar_moeda(total_item)))
+            self.itens_pedido_temp.append({
+                'produto_id': prod_id,
+                'codigo': codigo,
+                'descricao': descricao,
+                'qtd': qtd,
+                'valor': float(valor_unit)
+            })
 
         # atualizar totais e marcar modo edição
         self.atualizar_totais()
@@ -764,14 +857,13 @@ class SistemaPedidos:
             self.btn_finalizar_pedido.config(text="Atualizar Orçamento")
         except:
             pass
+
         # muda para a aba de orçamentos
-        self.notebook.select( self.notebook.tabs().index(self.notebook.select()) if False else 0 )  # placeholder safe select
-        # selecionar a aba Orçamentos: procurar índice onde texto == "Orçamentos"
         for i in range(len(self.notebook.tabs())):
-            tab_text = self.notebook.tab(i, "text")
-            if tab_text == "Orçamentos":
+            if self.notebook.tab(i, "text") == "Orçamentos":
                 self.notebook.select(i)
                 break
+
 
     def remover_item(self):
         """
@@ -1034,8 +1126,8 @@ class SistemaPedidos:
         frame_botoes.pack(fill="x", pady=10)
 
         
-        ttk.Button(frame_botoes, text="Exportar p/ Excel", command=self.exportar_excel_orcamento).pack(side="left", padx=5)
-        ttk.Button(frame_botoes, text="Abrir Orçamento", 
+        ttk.Button(frame_botoes, text="Exportar p/ Excel", bootstyle=DANGER,command=self.exportar_excel_orcamento).pack(side="left", padx=5)
+        ttk.Button(frame_botoes, bootstyle=INFO, text="Abrir Orçamento", 
                 command=lambda: (top.destroy(), self.carregar_orcamento_para_edicao(numero_pedido))).pack(side="left", padx=5)
         ttk.Button(frame_botoes, text="Fechar", command=top.destroy).pack(side="right", padx=5)
 
@@ -1085,13 +1177,15 @@ class SistemaPedidos:
 
             if hasattr(self, 'edicao_numero_pedido') and self.edicao_numero_pedido:
                 # === Atualizar pedido existente ===
+                status = self.combo_status_orc.get() or "Em Aberto"  # pega do combobox
+
                 self.cursor.execute('''
                     UPDATE pedidos
                     SET data_pedido=?, cliente_id=?, valor_produtos=?, valor_icms=?, valor_ipi=?, valor_pis=?, valor_cofins=?, valor_total=?,
                         representante=?, condicoes_pagamento=?, desconto=?, status=?, observacoes=?, validade=?
                     WHERE numero_pedido=?
                 ''', (data_pedido, cliente_id, subtotal, total_icms, total_ipi, total_pis, total_cofins, total_final,
-                    representante, cond_pag, desconto, "Em Aberto", observacoes, validade, numero_pedido))
+                    representante, cond_pag, desconto, status, observacoes, validade, numero_pedido))
 
                 # remover itens antigos e inserir os novos
                 self.cursor.execute('DELETE FROM pedido_itens WHERE numero_pedido = ?', (numero_pedido,))
