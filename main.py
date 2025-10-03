@@ -78,6 +78,10 @@ class SistemaPedidos:
         self.criar_aba_consulta_orcamentos()
         self.edicao_numero_pedido = None
 
+         # Atalhos de teclado
+        self.root.bind("<Control-n>", lambda e: self.limpar_pedido())      # Novo Orçamento
+        self.root.bind("<Control-s>", lambda e: self.finalizar_pedido())   # Salvar Orçamento
+
 
     
     def init_db(self):
@@ -174,14 +178,24 @@ class SistemaPedidos:
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="Clientes")
 
+        # --- Barra de pesquisa ---
+        search_frame = ttk.Frame(frame)
+        search_frame.pack(fill='x', padx=10, pady=5)
+
+        ttk.Label(search_frame, text="Pesquisar:").pack(side='left', padx=5)
+        self.entry_pesquisa_cliente = ttk.Entry(search_frame, width=40)
+        self.entry_pesquisa_cliente.pack(side='left', padx=5)
+        ttk.Button(search_frame, text="Buscar", command=lambda: self.carregar_clientes(self.entry_pesquisa_cliente.get())).pack(side='left', padx=5)
+        ttk.Button(search_frame, text="Limpar", command=lambda: self.carregar_clientes()).pack(side='left', padx=5)
+
         # --- Barra de botões ---
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', padx=10, pady=5)
-        
-        ttk.Button(btn_frame, text="Adicionar",bootstyle=SUCCESS, command=self.adicionar_cliente).pack(side='left', padx=5 )
+
+        ttk.Button(btn_frame, text="Adicionar", bootstyle=SUCCESS, command=self.adicionar_cliente).pack(side='left', padx=5 )
         ttk.Button(btn_frame, text="Editar", bootstyle=INFO, command=lambda: self.editar_cliente(None)).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Excluir",bootstyle=DANGER,  command=self.excluir_cliente).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Importar Arquivo",bootstyle=WARNING, command=lambda: self.importar_dados("clientes")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Excluir", bootstyle=DANGER, command=self.excluir_cliente).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Importar Arquivo", bootstyle=WARNING, command=lambda: self.importar_dados("clientes")).pack(side='left', padx=5)
 
         # --- Lista de clientes ---
         list_frame = ttk.LabelFrame(frame, text="Clientes Cadastrados", padding=10)
@@ -202,6 +216,70 @@ class SistemaPedidos:
         self.tree_clientes.bind("<Double-1>", self.visualizar_cliente)
 
         self.carregar_clientes()
+
+
+    def abrir_formulario_cliente(self, cliente=None):
+        """Abre popup para adicionar/editar cliente."""
+        top = tk.Toplevel(self.root)
+        top.title("Cadastro de Cliente")
+        top.geometry("600x400")
+
+        # deixa responsivo
+        top.grid_columnconfigure(1, weight=1)
+        top.grid_columnconfigure(3, weight=1)
+
+        labels = ['Razão Social:', 'CNPJ:', 'IE:', 'Endereço:', 'Cidade:', 'Estado:', 'CEP:', 'Telefone:', 'Email:']
+        entries = {}
+        for i, label in enumerate(labels):
+            ttk.Label(top, text=label).grid(row=i//2, column=(i%2)*2, sticky='w', padx=5, pady=5)
+            entry = ttk.Entry(top, width=28)
+            entry.grid(row=i//2, column=(i%2)*2+1, padx=5, pady=5, sticky="ew")
+            chave = normalizar_chave(label)
+            entries[chave] = entry
+
+        # Se for edição, preencher os campos
+        if cliente:
+            keys = ['id','razao_social','cnpj','ie','endereco','cidade','estado','cep','telefone','email']
+            for k, v in zip(keys, cliente):
+                if k in entries:
+                    entries[k].insert(0, v or "")
+        
+        def salvar():
+            dados = {k: v.get().strip() for k, v in entries.items()}
+            campos_obrigatorios = {"razao_social": "Razão Social", "cnpj": "CNPJ"}
+            faltando = [nome for chave, nome in campos_obrigatorios.items() if not dados.get(chave)]
+
+            if faltando:
+                messagebox.showwarning("Atenção", f"Preencha os campos obrigatórios: {', '.join(faltando)}")
+                return
+
+            try:
+                if cliente:  # editar
+                    self.cursor.execute('''
+                        UPDATE clientes
+                        SET razao_social=?, cnpj=?, ie=?, endereco=?, cidade=?, estado=?, cep=?, telefone=?, email=?
+                        WHERE id=?
+                    ''', (dados['razao_social'], dados['cnpj'], dados.get('ie'), dados.get('endereco'),
+                        dados.get('cidade'), dados.get('estado'), dados.get('cep'),
+                        dados.get('telefone'), dados.get('email'), cliente[0]))
+                else:  # novo
+                    self.cursor.execute('''
+                        INSERT INTO clientes (razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, email)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (dados['razao_social'], dados['cnpj'], dados.get('ie'), dados.get('endereco'),
+                        dados.get('cidade'), dados.get('estado'), dados.get('cep'),
+                        dados.get('telefone'), dados.get('email')))
+                self.conn.commit()
+                self.carregar_clientes()
+                top.destroy()
+            except sqlite3.IntegrityError:
+                messagebox.showerror("Erro", "CNPJ já cadastrado!")
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao salvar cliente: {e}")
+
+        ttk.Button(top, text="Salvar", command=salvar).grid(row=6, column=0, columnspan=2, pady=10)
+
+    
 
     def adicionar_cliente(self):
         self.abrir_formulario_cliente()
@@ -237,59 +315,9 @@ class SistemaPedidos:
             except Exception as e:
                 messagebox.showerror("Erro", f"Erro ao excluir cliente: {e}")
 
-    def abrir_formulario_cliente(self, cliente=None):
-        """Abre popup para adicionar/editar cliente."""
-        top = tk.Toplevel(self.root)
-        top.title("Cadastro de Cliente")
-        top.geometry("600x400")
+   
 
-        labels = ['Razão Social:', 'CNPJ:', 'IE:', 'Endereço:', 'Cidade:', 'Estado:', 'CEP:', 'Telefone:', 'Email:']
-        entries = {}
-        for i, label in enumerate(labels):
-            ttk.Label(top, text=label).grid(row=i//2, column=(i%2)*2, sticky='w', padx=5, pady=5)
-            entry = ttk.Entry(top, width=28)
-            entry.grid(row=i//2, column=(i%2)*2+1, padx=5, pady=5)
-            chave = normalizar_chave(label)
-            entries[chave] = entry
-
-        # Se for edição, preencher os campos
-        if cliente:
-            keys = ['id','razao_social','cnpj','ie','endereco','cidade','estado','cep','telefone','email']
-            for k, v in zip(keys, cliente):
-                if k in entries:
-                    entries[k].insert(0, v or "")
-
-        def salvar():
-            dados = {k: v.get() for k, v in entries.items()}
-            if not dados['razao_social'] or not dados['cnpj']:
-                messagebox.showwarning("Atenção", "Razão Social e CNPJ são obrigatórios!")
-                return
-            try:
-                if cliente:  # editar
-                    self.cursor.execute('''
-                        UPDATE clientes
-                        SET razao_social=?, cnpj=?, ie=?, endereco=?, cidade=?, estado=?, cep=?, telefone=?, email=?
-                        WHERE id=?
-                    ''', (dados['razao_social'], dados['cnpj'], dados.get('ie'), dados.get('endereco'),
-                        dados.get('cidade'), dados.get('estado'), dados.get('cep'),
-                        dados.get('telefone'), dados.get('email'), cliente[0]))
-                else:  # novo
-                    self.cursor.execute('''
-                        INSERT INTO clientes (razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, email)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (dados['razao_social'], dados['cnpj'], dados.get('ie'), dados.get('endereco'),
-                        dados.get('cidade'), dados.get('estado'), dados.get('cep'),
-                        dados.get('telefone'), dados.get('email')))
-                self.conn.commit()
-                self.carregar_clientes()
-                top.destroy()
-            except sqlite3.IntegrityError:
-                messagebox.showerror("Erro", "CNPJ já cadastrado!")
-            except Exception as e:
-                messagebox.showerror("Erro", f"Erro ao salvar cliente: {e}")
-
-        ttk.Button(top, text="Salvar", command=salvar).grid(row=6, column=0, columnspan=2, pady=10)
-
+        
     def criar_aba_consulta_orcamentos(self):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="Consultar Orçamentos")
@@ -1269,42 +1297,48 @@ class SistemaPedidos:
                 if k in entries:
                     entries[k].insert(0, v or "")
 
-        def salvar():
-            dados = {k: v.get() for k,v in entries.items()}
-            if not dados['codigo'] or not dados['descricao'] or not dados['valor_unitario']:
-                messagebox.showwarning("Atenção", "Código, Descrição e Valor Unitário são obrigatórios!")
-                return
-            try:
-                if produto:  # atualização
-                    self.cursor.execute('''
-                        UPDATE produtos
-                        SET codigo=?, descricao=?, valor_unitario=?, tipo=?, origem_tributacao=?, voltagem=?,
-                            aliq_icms=?, aliq_ipi=?, aliq_pis=?, aliq_cofins=?
-                        WHERE id=?
-                    ''', (dados['codigo'], dados['descricao'], float(dados['valor_unitario'] or 0),
-                        dados.get('tipo'), dados.get('origem_tributacao'), dados.get('voltagem'),
-                        float(dados.get('icms') or 0), float(dados.get('ipi') or 0),
-                        float(dados.get('pis') or 0), float(dados.get('cofins') or 0),
-                        produto[0]))
-                else:  # novo
-                    self.cursor.execute('''
-                        INSERT INTO produtos (codigo, descricao, valor_unitario, tipo, origem_tributacao, voltagem,
-                                            aliq_icms, aliq_ipi, aliq_pis, aliq_cofins)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (dados['codigo'], dados['descricao'], float(dados['valor_unitario'] or 0),
-                        dados.get('tipo'), dados.get('origem_tributacao'), dados.get('voltagem'),
-                        float(dados.get('icms') or 0), float(dados.get('ipi') or 0),
-                        float(dados.get('pis') or 0), float(dados.get('cofins') or 0)))
-                self.conn.commit()
-                self.carregar_produtos()
-                top.destroy()
-            except sqlite3.IntegrityError:
-                messagebox.showerror("Erro", "Código já cadastrado!")   
-            except Exception as e:
-                messagebox.showerror("Erro", f"Erro ao salvar produto: {e}")
+            def salvar():
+                dados = {k: v.get().strip() for k,v in entries.items()}
+                if not dados['codigo']:
+                    messagebox.showerror("Erro", "O campo CÓDIGO do produto está vazio.")
+                    return
+                if not dados['descricao']:
+                    messagebox.showerror("Erro", "O campo DESCRIÇÃO do produto está vazio.")
+                    return
+                if not dados['valor_unitario']:
+                    messagebox.showerror("Erro", "O campo VALOR UNITÁRIO está vazio.")
+                    return
 
-        ttk.Button(top, text="Salvar", command=salvar).grid(row=6, column=0, columnspan=2, pady=10)
+                try:
+                    if produto:  # atualização
+                        self.cursor.execute('''
+                            UPDATE produtos
+                            SET codigo=?, descricao=?, valor_unitario=?, tipo=?, origem_tributacao=?, voltagem=?,
+                                aliq_icms=?, aliq_ipi=?, aliq_pis=?, aliq_cofins=?
+                            WHERE id=?
+                        ''', (dados['codigo'], dados['descricao'], float(dados['valor_unitario'] or 0),
+                            dados.get('tipo'), dados.get('origem_tributacao'), dados.get('voltagem'),
+                            float(dados.get('icms') or 0), float(dados.get('ipi') or 0),
+                            float(dados.get('pis') or 0), float(dados.get('cofins') or 0),
+                            produto[0]))
+                    else:  # novo
+                        self.cursor.execute('''
+                            INSERT INTO produtos (codigo, descricao, valor_unitario, tipo, origem_tributacao, voltagem,
+                                                aliq_icms, aliq_ipi, aliq_pis, aliq_cofins)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (dados['codigo'], dados['descricao'], float(dados['valor_unitario'] or 0),
+                            dados.get('tipo'), dados.get('origem_tributacao'), dados.get('voltagem'),
+                            float(dados.get('icms') or 0), float(dados.get('ipi') or 0),
+                            float(dados.get('pis') or 0), float(dados.get('cofins') or 0)))
+                    self.conn.commit()
+                    self.carregar_produtos()
+                    top.destroy()
+                except sqlite3.IntegrityError:
+                    messagebox.showerror("Erro", "Código já cadastrado!")   
+                except Exception as e:
+                    messagebox.showerror("Erro", f"Erro ao salvar produto: {e}")
 
+            ttk.Button(top, text="Salvar", command=salvar).grid(row=6, column=0, columnspan=2, pady=10)
 
     # ------------------- Export PDF -------------------
     def gerar_pdf_orcamento(self, numero_pedido=None):
