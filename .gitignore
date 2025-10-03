@@ -1,13 +1,40 @@
-# Arquivos de cache
-__pycache__/
-*.pyc
+# Dependências
+/node_modules
+/.pnp
+.pnp.js
 
-# Banco de dados local
-pedidos.db
+# Build
+/dist
+/build
 
-# Arquivos de exportação
-*.xlsx
-*.pdf
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Ambiente virtual
-venv/
+# Ambiente
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor/IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Cache
+/.parcel-cache
+/.vite
+/.cache
+/.eslintcache
+
+# Mac/Linux
+.DS_Store
+Thumbs.db
