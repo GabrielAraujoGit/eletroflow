@@ -7,6 +7,19 @@ Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## \[Unreleased\]
 
+## [1.3.1] - 03/Out/25
+
+### Added
+- Campo de pesquisa rápida em **Clientes** e **Produtos**.
+- Atalhos de teclado globais:
+  - Ctrl+N → Novo orçamento.
+  - Ctrl+S → Salvar orçamento.
+
+### Changed
+- Interfaces de formulários (Clientes/Produtos) mais responsivas com `grid`.
+- Mensagens de erro mais detalhadas, indicando campos obrigatórios faltando.
+
+
 ## \[1.3.0\] - 02/Out/25
 
 ### Added
