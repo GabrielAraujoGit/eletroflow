@@ -18,11 +18,6 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import ttkbootstrap as tb
 from ttkbootstrap.constants import * 
 import os
-import ttkbootstrap as tb
-
-
-
-
 
 def formatar_moeda(valor):
     try:
@@ -55,8 +50,6 @@ def normalizar_chave(texto):
     texto = texto.replace(' ', '_')
     return texto
 
-
-
 class SistemaPedidos:
     def __init__(self, root):
         self.root = root
@@ -83,9 +76,7 @@ class SistemaPedidos:
          # Atalhos de teclado
         self.root.bind("<Control-n>", lambda e: self.limpar_pedido())      # Novo Orçamento
         self.root.bind("<Control-s>", lambda e: self.finalizar_pedido())   # Salvar Orçamento
-        
-
-    
+         
     def init_db(self):
         self.conn = sqlite3.connect('pedidos.db')
         self.cursor = self.conn.cursor()
@@ -220,7 +211,6 @@ class SistemaPedidos:
 
         self.carregar_clientes()
 
-
     def abrir_formulario_cliente(self, cliente=None):
         """Abre popup para adicionar/editar cliente."""
         top = tk.Toplevel(self.root)
@@ -282,8 +272,6 @@ class SistemaPedidos:
 
         ttk.Button(top, text="Salvar", command=salvar).grid(row=6, column=0, columnspan=2, pady=10)
 
-    
-
     def adicionar_cliente(self):
         self.abrir_formulario_cliente()
 
@@ -317,18 +305,13 @@ class SistemaPedidos:
                 messagebox.showinfo("Sucesso", "Cliente excluído com sucesso!")
             except Exception as e:
                 messagebox.showerror("Erro", f"Erro ao excluir cliente: {e}")
-
    
-
-        
     def criar_aba_consulta_orcamentos(self):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="Consultar Orçamentos")
 
         search_frame = ttk.LabelFrame(frame, text="Filtros de Busca", padding=10)
         search_frame.pack(fill="x", padx=10, pady=10)  # mantém pack só para o frame em si
-
-
 
         # Número
         ttk.Label(search_frame, text="Número:").pack(side="left", padx=5)
@@ -359,10 +342,6 @@ class SistemaPedidos:
         self.entry_data_fim = ttk.Entry(search_frame, width=12)
         self.entry_data_fim.pack(side="left", padx=5)
 
-                # Configuração de cores por status
-        
-
-
         # Botão buscar
         ttk.Button(search_frame, text="Buscar", command=self.buscar_orcamento).pack(side="left", padx=5)
 
@@ -383,10 +362,8 @@ class SistemaPedidos:
         self.tree_orcamentos.tag_configure("Rejeitado", foreground="#dc2626")   # vermelho
         self.tree_orcamentos.tag_configure("Cancelado", foreground="#ea580c")   # laranja
 
-
         self.tree_orcamentos.bind("<Double-1>", self.visualizar_orcamento)
 
-      
         self.buscar_orcamento()
 
     def buscar_orcamento(self):
@@ -525,7 +502,6 @@ class SistemaPedidos:
         if cliente:
             self.abrir_formulario_cliente(cliente)
 
-
     # ------------------- Produtos -------------------
     def criar_aba_produtos(self):
         frame = ttk.Frame(self.notebook)
@@ -577,7 +553,6 @@ class SistemaPedidos:
 
         self.carregar_produtos()
 
-    
     def salvar_produto(self):
         try:
             dados = {k: v.get() for k, v in self.produto_entries.items()}
@@ -632,8 +607,6 @@ class SistemaPedidos:
             row = list(row)
             row[5] = formatar_moeda(row[5])  # valor_unitario
             self.tree_produtos.insert('', 'end', values=row)
-
-    
     
     def filtrar_produtos_tipo(self):
         tipo = self.combo_filtro_tipo.get().strip()
@@ -656,7 +629,6 @@ class SistemaPedidos:
             row = list(row)
             row[5] = formatar_moeda(row[5])  # formatar valor unitário
             self.tree_produtos.insert('', 'end', values=row)
-
     
     def editar_produto(self, event=None):
         item = self.tree_produtos.selection()
@@ -685,9 +657,7 @@ class SistemaPedidos:
             except Exception as e:
                 messagebox.showerror("Erro", f"Erro ao excluir produto: {e}")   
 
-
     # ------------------- Pedidos/Orçamentos -------------------
-
 
     def criar_aba_pedidos(self):
         frame = tb.Frame(self.notebook)
@@ -720,8 +690,6 @@ class SistemaPedidos:
             width=15,
             state="readonly"
         )
-
-        
 
         # Informações Comerciais
         extra_frame = tb.Labelframe(frame, text="Informações Comerciais", padding=6, bootstyle="info")
@@ -857,7 +825,6 @@ class SistemaPedidos:
         self.label_numero_orc_lbl.grid(row=0, column=2, sticky=W, padx=5)
         self.label_numero_orc.grid(row=0, column=3, padx=5)
         self.label_numero_orc.config(text=numero_pedido)
-
 
         # selecionar cliente no combo (formato: "id - nome")
         self.cursor.execute("SELECT razao_social FROM clientes WHERE id=?", (cliente_id,))
@@ -999,7 +966,6 @@ class SistemaPedidos:
         except Exception as e:
             messagebox.showerror("Erro", f"Falha ao adicionar item: {e}")
 
-    
     def atualizar_totais(self):
         subtotal = sum(item['qtd'] * item['valor'] for item in self.itens_pedido_temp)
         
@@ -1269,10 +1235,6 @@ class SistemaPedidos:
         except Exception as e:
             messagebox.showerror("Erro", f"Falha ao salvar/atualizar orçamento: {e}")
 
-
-
-
-
     def abrir_formulario_produto(self, produto=None):
         top = tk.Toplevel(self.root)
         top.title("Cadastro de Produto")
@@ -1349,8 +1311,6 @@ class SistemaPedidos:
             # Se o botão chamar sem argumento, pega do label
             if numero_pedido is None:
                 numero_pedido = self.label_numero_orc.cget("text")
-
-
 
             # -------- Padronização de tabelas --------
             COR_CABECALHO = colors.HexColor("#1E3A8A")  # Azul escuro
@@ -1473,8 +1433,6 @@ class SistemaPedidos:
             estilos = getSampleStyleSheet()
             elementos = []
 
-    
-
             # Logo da empresa
             try:
                 from reportlab.platypus import Image
@@ -1505,12 +1463,10 @@ class SistemaPedidos:
             
             endereco_formatado = " - ".join(partes_endereco) if partes_endereco else "Não informado"    
 
-            
             try:
                 data_formatada = datetime.strptime(pedido[0], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%y %H:%M")
             except:
                 data_formatada = pedido[0] 
-
 
             # Informações do cliente (tabela)
             info_cliente = [
@@ -1581,7 +1537,6 @@ class SistemaPedidos:
             elementos.append(Paragraph("<font size=9>Orçamento válido conforme condições acima.</font>", estilos['Italic']))
             elementos.append(Paragraph("<font size=9>Valores sujeitos a alterações sem aviso prévio.</font>",
                                     estilos['Italic']))
-
             # Gerar arquivo
             doc.build(elementos)
             messagebox.showinfo("Sucesso", f"PDF gerado: {arquivo}")
@@ -1589,8 +1544,6 @@ class SistemaPedidos:
         except Exception as e:
             messagebox.showerror("Erro", f"Falha ao gerar PDF: {e}")
 
-
-  
     def importar_dados(self, tipo="clientes"):
     
                 caminho = filedialog.askopenfilename(
@@ -1931,7 +1884,6 @@ class SistemaPedidos:
         nome_arquivo = f"Orcamento_{numero_pedido}.xlsx"
         wb.save(nome_arquivo)
         os.startfile(nome_arquivo)
-
 
     def __del__(self):
             if hasattr(self, 'conn'):
