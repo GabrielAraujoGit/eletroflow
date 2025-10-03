@@ -19,6 +19,8 @@ import ttkbootstrap as tb
 from ttkbootstrap.constants import * 
 from ttkbootstrap.icons import Icon
 import os
+from ttkbootstrap.icons import Icon
+
 
 
 
@@ -175,7 +177,7 @@ class SistemaPedidos:
         # --- Barra de botões ---
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', padx=10, pady=5)
-
+        
         ttk.Button(btn_frame, text="Adicionar",bootstyle=SUCCESS, command=self.adicionar_cliente).pack(side='left', padx=5 )
         ttk.Button(btn_frame, text="Editar", bootstyle=INFO, command=lambda: self.editar_cliente(None)).pack(side='left', padx=5)
         ttk.Button(btn_frame, text="Excluir",bootstyle=DANGER,  command=self.excluir_cliente).pack(side='left', padx=5)
