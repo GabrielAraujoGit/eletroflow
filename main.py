@@ -17,9 +17,9 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import ttkbootstrap as tb
 from ttkbootstrap.constants import * 
-from ttkbootstrap.icons import Icon
 import os
-from ttkbootstrap.icons import Icon
+import ttkbootstrap as tb
+
 
 
 
@@ -55,6 +55,8 @@ def normalizar_chave(texto):
     texto = texto.replace(' ', '_')
     return texto
 
+
+
 class SistemaPedidos:
     def __init__(self, root):
         self.root = root
@@ -81,7 +83,7 @@ class SistemaPedidos:
          # Atalhos de teclado
         self.root.bind("<Control-n>", lambda e: self.limpar_pedido())      # Novo Orçamento
         self.root.bind("<Control-s>", lambda e: self.finalizar_pedido())   # Salvar Orçamento
-
+        
 
     
     def init_db(self):
@@ -185,6 +187,7 @@ class SistemaPedidos:
         ttk.Label(search_frame, text="Pesquisar:").pack(side='left', padx=5)
         self.entry_pesquisa_cliente = ttk.Entry(search_frame, width=40)
         self.entry_pesquisa_cliente.pack(side='left', padx=5)
+        
         ttk.Button(search_frame, text="Buscar", command=lambda: self.carregar_clientes(self.entry_pesquisa_cliente.get())).pack(side='left', padx=5)
         ttk.Button(search_frame, text="Limpar", command=lambda: self.carregar_clientes()).pack(side='left', padx=5)
 
@@ -1935,7 +1938,7 @@ class SistemaPedidos:
                 self.conn.close()
 
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = tb.Window(themename="superhero")
     app = SistemaPedidos(root)
     root.mainloop()
     
