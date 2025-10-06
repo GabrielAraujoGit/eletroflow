@@ -361,10 +361,10 @@ class SistemaPedidos:
         self.tree_orcamentos.pack(fill="both", expand=True)
 
         # Configuração de cores só no texto do Status
-        self.tree_orcamentos.tag_configure("Em Aberto", foreground="#1d4ed8")   # azul
-        self.tree_orcamentos.tag_configure("Aprovado", foreground="#15803d")    # verde
-        self.tree_orcamentos.tag_configure("Rejeitado", foreground="#dc2626")   # vermelho
-        self.tree_orcamentos.tag_configure("Cancelado", foreground="#ea580c")   # laranja
+        self.tree_orcamentos.tag_configure("Em Aberto", foreground="#B5EAF7")   # azul
+        self.tree_orcamentos.tag_configure("Aprovado", foreground="#00ff5e")    # verde
+        self.tree_orcamentos.tag_configure("Rejeitado", foreground="#FF0000")   # vermelho
+        self.tree_orcamentos.tag_configure("Cancelado", foreground="#ff5900")   # laranja
 
         self.tree_orcamentos.bind("<Double-1>", self.visualizar_orcamento)
 
@@ -1866,10 +1866,10 @@ class SistemaPedidos:
             cel_val = ws.cell(row=linha, column=5, value=valor)
             cel_val.number_format = 'R$ #,##0.00'
             if "TOTAL" in label:
-                cel_label.fill = PatternFill("solid", fgColor="228B22")
+                cel_label.fill = PatternFill("solid", fgColor="124A12")
                 cel_label.font = Font(bold=True, size=12, color="FFFFFF")
                 cel_val.font = Font(bold=True, size=12, color="FFFFFF")
-                cel_val.fill = PatternFill("solid", fgColor="228B22")
+                cel_val.fill = PatternFill("solid", fgColor="124A12")
             linha += 1
 
         # Observações
