@@ -52,3 +52,6 @@ Desktop.ini
 .vercel
 .netlify
 .docker
+
+# Banco de dados local
+*.db
