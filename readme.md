@@ -91,7 +91,4 @@ sistema-orcamentos/
 
 ---
 
-## 🧾 Licença
-Este projeto é distribuído sob a licença **MIT**.  
-Sinta-se à vontade para usar, modificar e contribuir.
 
