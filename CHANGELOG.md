@@ -7,6 +7,49 @@ Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## \[Unreleased\]
 
+
+## [1.4.0] - 07/Out/25
+
+### Added
+- **Cadastro de Empresas Emissoras**:
+  - Nova aba para gerenciar empresas vinculadas aos orçamentos.
+  - Campos de nome, CNPJ, endereço, e-mail e telefone.
+  - Upload de **logos em PNG** com pré-visualização na interface.
+  - Armazenamento automático da logo na pasta `/logos`.
+
+- **Integração de Empresas com Orçamentos**:
+  - Cada orçamento agora pode estar vinculado a uma empresa emissora.
+  - Dados da empresa (nome, CNPJ, logo, etc.) são exibidos no PDF gerado.
+
+- **Diferenciação visual entre “Novo” e “Edição de Orçamento”**:
+  - Faixa colorida no topo da aba indicando o modo atual:
+    - 🟢 Verde para “Novo Orçamento”
+    - 🟠 Laranja para “Edição de Orçamento”
+  - Botão principal muda texto e cor conforme o modo.
+  - Campos de **Cliente** e **Empresa** são bloqueados durante edição.
+
+- **Layout PDF Padronizado (multiempresa)**:
+  - Cabeçalho fixo com logo e informações da empresa emissora.
+  - Estrutura universal para todas as empresas do grupo.
+  - Melhor espaçamento, margens consistentes e total destacado.
+  - Nome de arquivo padronizado com data e hora (`orcamento_<num>_<data>.pdf`).
+
+### Changed
+- Função `gerar_pdf_orcamento` totalmente revisada para suportar múltiplas empresas.
+- Imports reorganizados (evitando conflitos entre `Image` do Pillow, ReportLab e OpenPyXL).
+- Melhor tratamento para campos ausentes (exibe “–” quando não há dados).
+- Botão de salvar/atualizar orçamento agora reflete automaticamente o modo ativo.
+- Títulos e rótulos atualizados para maior clareza visual.
+
+### Fixed
+- Corrigido erro ao gerar PDF com empresa sem logo.
+- Corrigido bug em `finalizar_pedido` que não atualizava interface após salvar.
+- Ajustada proporção de logos no PDF (largura fixa, altura proporcional).
+
+---
+
+
+
 ## [1.3.1] - 06/Out/25
 
 ### Added
