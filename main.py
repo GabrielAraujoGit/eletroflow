@@ -1235,7 +1235,8 @@ class SistemaPedidos:
             else:
                 self.cursor.execute("SELECT COUNT(*) FROM pedidos")
                 total_registros = self.cursor.fetchone()[0] or 0
-                numero_pedido = f"ORC-{total_registros+1:04d}"
+                data = datetime.now().strftime("%Y%m%d")
+                numero_pedido = f"ORC-{data}-{total_registros+1:03d}"
                 self.label_numero_orc.config(text=numero_pedido)
 
             data_pedido = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -1507,7 +1508,7 @@ class SistemaPedidos:
             try:
                 
                 logo = Image("logo.png", width=120, height=30)  # ajuste conforme a sua logo
-                logo.hAlign = 'center'
+                logo.hAlign = 'CENTER'
                 elementos.append(logo)
             except:
                 pass
@@ -1517,7 +1518,7 @@ class SistemaPedidos:
             elementos.append(titulo)
             elementos.append(Spacer(1, 6))
 
-            num_orc = Paragraph(f"<para align='center'><font size=12>Orçamento nº <b>{numero_pedido}</b></font></para>",
+            num_orc = Paragraph(f"<para align='center'><font size=12>Nº <b>{numero_pedido}</b></font></para>",
                                 estilos['Normal'])
             elementos.append(num_orc)
             elementos.append(Spacer(1, 20))
