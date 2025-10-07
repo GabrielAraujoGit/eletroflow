@@ -1507,7 +1507,7 @@ class SistemaPedidos:
             try:
                 
                 logo = Image("logo.png", width=120, height=30)  # ajuste conforme a sua logo
-                logo.hAlign = 'LEFT'
+                logo.hAlign = 'center'
                 elementos.append(logo)
             except:
                 pass
