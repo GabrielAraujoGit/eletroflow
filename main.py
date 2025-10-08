@@ -173,7 +173,6 @@ class SistemaPedidos:
             )
         ''')
 
-
         # pedidos
         # pedidos
         self.cursor.execute('''
@@ -314,8 +313,6 @@ class SistemaPedidos:
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao buscar CEP: {e}")
 
-    
-    
     def criar_aba_clientes(self):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="Clientes")
@@ -462,7 +459,6 @@ class SistemaPedidos:
         if cliente:
             self.abrir_formulario_cliente(cliente)
 
-
     def excluir_cliente(self):
         selecionados = self.tree_clientes.selection()
         if not selecionados:
@@ -483,7 +479,6 @@ class SistemaPedidos:
             messagebox.showinfo("Sucesso", f"{len(selecionados)} cliente(s) excluído(s) com sucesso!")
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao excluir: {e}")
-
    
     def criar_aba_consulta_orcamentos(self):
         frame = ttk.Frame(self.notebook)
@@ -522,19 +517,15 @@ class SistemaPedidos:
         # Treeview de resultados
         list_frame = ttk.LabelFrame(frame, text="Resultados", padding=10)
         list_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
         cols = ("Número", "Data", "Cliente", "Total", "Representante", "Status")
         self.tree_orcamentos = ttk.Treeview(list_frame, columns=cols, show="headings", height=12)
         for col in cols:
             self.tree_orcamentos.heading(col, text=col)
             self.tree_orcamentos.column(col, width=140, anchor='center')
         self.tree_orcamentos.pack(fill="both", expand=True)
-
         # Permitir copiar célula
         self.tree_orcamentos.bind("<Control-c>", self.copiar_celula_treeview)
         self.tree_orcamentos.bind("<Control-Double-1>", self.copiar_celula_treeview, add='+')
-
-
         # Configuração de cores só no texto do Status
         self.tree_orcamentos.tag_configure("Em Aberto", foreground="#00EEFF")   # azul
         self.tree_orcamentos.tag_configure("Aprovado", foreground="#00ff5e")    # verde
@@ -729,8 +720,6 @@ class SistemaPedidos:
         self.tree_produtos.configure(yscrollcommand=scrollbar.set)
         self.tree_produtos.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
-
-                # Permitir copiar célula
         self.tree_produtos.bind("<Control-c>", self.copiar_celula_treeview)
         self.tree_produtos.bind("<Control-Double-1>", self.copiar_celula_treeview, add='+')
 
@@ -784,8 +773,6 @@ class SistemaPedidos:
             FROM produtos
         ''')
         # Atualizar combobox com os tipos disponíveis
-        
-
         for row in self.cursor.fetchall():
             # formatar valor unitário como moeda
             row = list(row)
@@ -845,7 +832,6 @@ class SistemaPedidos:
             messagebox.showinfo("Sucesso", f"{len(selecionados)} produto(s) excluído(s) com sucesso!")
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao excluir produto(s): {e}")
-
 
     # ------------------- Pedidos/Orçamentos -------------------
 
@@ -907,8 +893,6 @@ class SistemaPedidos:
         self.entry_qtd.grid(row=1, column=5, padx=5)
         tb.Button(top_frame, text="Adicionar Item", command=self.adicionar_item_pedido, bootstyle="success").grid(row=1, column=6, padx=5)
         tb.Button(top_frame, text="Remover Item", command=self.remover_item, bootstyle="danger").grid(row=1, column=7, padx=5)
-
-       
         items_frame = tb.Labelframe(frame, text="Itens do Orçamento", padding=6, bootstyle="info")
         items_frame.pack(fill='both', expand=True, padx=10, pady=6)
 
@@ -1216,8 +1200,8 @@ class SistemaPedidos:
 
         def acao_editar():
             """Chama o método editar_cliente para preencher o formulário da aba."""
-            self.tree_clientes.selection_set(item)   # garante que o cliente está selecionado
-            self.editar_cliente(None)                # usa o método existente
+            self.tree_clientes.selection_set(item)   
+            self.editar_cliente(None)                
             top.destroy()                            # fecha a janelinha
 
         ttk.Button(frame_botoes, text="Editar Cliente", command=acao_editar).pack(side="left", padx=5)
@@ -1303,8 +1287,6 @@ class SistemaPedidos:
         # Rodapé com botões
         frame_botoes = ttk.Frame(top)
         frame_botoes.pack(fill="x", pady=10)
-
-        
         ttk.Button(frame_botoes, text="Exportar p/ Excel", bootstyle=DANGER,command=self.exportar_excel_orcamento).pack(side="left", padx=5)
         ttk.Button(frame_botoes, bootstyle=INFO, text="Abrir Orçamento", 
                 command=lambda: (top.destroy(), self.carregar_orcamento_para_edicao(numero_pedido))).pack(side="left", padx=5)
@@ -1318,14 +1300,12 @@ class SistemaPedidos:
             self.combo_cliente.set('')
             self.combo_produto.set('')
             self.entry_qtd.delete(0, tk.END)
-        # esconder campo de status quando for novo orçamento
+
         try:
             self.label_status_orc.grid_forget()
             self.combo_status_orc.grid_forget()
         except:
             pass
-
-        # esconder número do orçamento quando for novo
         try:
             self.label_numero_orc_lbl.grid_forget()
             self.label_numero_orc.grid_forget()
@@ -1645,19 +1625,13 @@ class SistemaPedidos:
             ]))
             story.append(tabela_totais)
             story.append(Spacer(1, 20))
-
-            # === Observações ===
             story.append(Paragraph("<b>Observações:</b>", styles["Heading5"]))
             story.append(Paragraph(observacoes or "Nenhuma", estilo_normal))
             story.append(Spacer(1, 30))
-            # === Assinatura ===
             story.append(Spacer(1, 40))
             story.append(Paragraph("_____________________________________<br/>Assinatura do Representante", estilo_normal))
-            # === Rodapé (opcional) ===
             story.append(Spacer(1, 25))
-            # === Gerar PDF ===
             doc.build(story)
-
             messagebox.showinfo("Sucesso", f"PDF gerado com sucesso:\n{caminho_pdf}")
             os.startfile(caminho_pdf)
 
