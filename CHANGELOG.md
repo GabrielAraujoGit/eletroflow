@@ -88,9 +88,6 @@ Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 - Ajustada proporção de logos no PDF (largura fixa, altura proporcional).
 
 ---
-
-
-
 ## [1.3.1] - 06/Out/25
 
 ### Added

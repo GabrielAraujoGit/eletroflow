@@ -208,10 +208,11 @@ class SistemaPedidos:
             self.cursor.execute('SELECT aliq_icms, aliq_ipi, aliq_pis, aliq_cofins FROM produtos WHERE id=?', (item['produto_id'],))
             icms, ipi, pis, cofins = self.cursor.fetchone()
             base = item['qtd'] * item['valor']
-            total_icms += base * (icms or 0) / 100
-            total_ipi += base * (ipi or 0) / 100
-            total_pis += base * (pis or 0) / 100
-            total_cofins += base * (cofins or 0) / 100
+            total_icms += base * (icms or 0)
+            total_ipi += base * (ipi or 0)
+            total_pis += base * (pis or 0)
+            total_cofins += base * (cofins or 0)
+
         total = subtotal + total_icms + total_ipi + total_pis + total_cofins
         return subtotal, total_icms, total_ipi, total_pis, total_cofins, total
     def copiar_celula_treeview(self, event):
@@ -323,7 +324,7 @@ class SistemaPedidos:
         ttk.Button(btn_frame, text="Editar", bootstyle=INFO, command=lambda: self.editar_cliente(None)).pack(side='left', padx=5)
         ttk.Button(btn_frame, text="Excluir", bootstyle=DANGER, command=self.excluir_cliente).pack(side='left', padx=5)
         ttk.Button(btn_frame, text="Importar Arquivo", bootstyle=WARNING, command=lambda: self.importar_dados("clientes")).pack(side='left', padx=5)
-
+    
         # --- Lista de clientes ---nu
         list_frame = ttk.LabelFrame(frame, text="Clientes Cadastrados", padding=10)
         list_frame.pack(fill='both', expand=True, padx=10, pady=10)
@@ -731,27 +732,35 @@ class SistemaPedidos:
     def limpar_produto(self):
         for entry in self.produto_entries.values():
             entry.delete(0, tk.END)
-    
     def carregar_produtos(self):
         for item in self.tree_produtos.get_children():
             self.tree_produtos.delete(item)
 
         self.cursor.execute("SELECT DISTINCT tipo FROM produtos WHERE tipo IS NOT NULL AND tipo <> ''")
         tipos = [row[0] for row in self.cursor.fetchall()]
-        self.combo_filtro_tipo['values'] = [""] + tipos  # vazio = mostrar todos
-        
-        # Agora trazemos todas as colunas que o Treeview espera
+        self.combo_filtro_tipo['values'] = [""] + tipos
+
         self.cursor.execute('''
             SELECT codigo, descricao, tipo, origem_tributacao,
-                valor_unitario, aliq_icms, aliq_ipi, aliq_pis
+                valor_unitario, aliq_icms, aliq_ipi, aliq_pis, aliq_cofins
             FROM produtos
         ''')
-        # Atualizar combobox com os tipos disponíveis
+
         for row in self.cursor.fetchall():
-            # formatar valor unitário como moeda
             row = list(row)
-            row[5] = formatar_moeda(row[5])  # valor_unitario
-            self.tree_produtos.insert('', 'end', values=row)
+            # valor_unitario (índice 4)
+            row[4] = formatar_moeda(row[4])
+
+            # Converte percentuais para formato legível (ex: 0.065 -> "6.5%")
+            icms = f"{row[5] * 100:.2f}%" if row[5] is not None else ""
+            ipi = f"{row[6] * 100:.2f}%" if row[6] is not None else ""
+            pis = f"{row[7] * 100:.2f}%" if row[7] is not None else ""
+            cofins = f"{row[8] * 100:.2f}%" if row[8] is not None else ""
+            pis_cofins = f"{pis}/{cofins}"
+
+            valores = (row[0], row[1], row[2], row[3], row[4], icms, ipi, pis_cofins)
+            self.tree_produtos.insert('', 'end', values=valores)
+
     
     def filtrar_produtos_tipo(self):
         tipo = self.combo_filtro_tipo.get().strip()
@@ -1167,7 +1176,6 @@ class SistemaPedidos:
                     "qtd": qtd,
                     "valor": float(preco_venda or 0)
                 })
-
             # Atualiza visualização na treeview
             self.tree_pedido_items.delete(*self.tree_pedido_items.get_children())
             for item in self.itens_pedido_temp:
@@ -1199,10 +1207,11 @@ class SistemaPedidos:
             aliq_icms, aliq_ipi, aliq_pis, aliq_cofins = self.cursor.fetchone()
             
             base = item['qtd'] * item['valor']
-            total_icms   += base * (aliq_icms or 0) / 100
-            total_ipi    += base * (aliq_ipi or 0) / 100
-            total_pis    += base * (aliq_pis or 0) / 100
-            total_cofins += base * (aliq_cofins or 0) / 100
+            total_icms   += base * (aliq_icms or 0)
+            total_ipi    += base * (aliq_ipi or 0)
+            total_pis    += base * (aliq_pis or 0)
+            total_cofins += base * (aliq_cofins or 0)
+
 
         total_impostos = total_icms + total_ipi + total_pis + total_cofins
         desconto = float(self.entry_desconto.get() or 0)
