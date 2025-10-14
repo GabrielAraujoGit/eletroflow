@@ -1709,17 +1709,7 @@ class SistemaPedidos:
             story = []
 
             # Buscar logo da empresa
-            self.cursor.execute("SELECT caminho_logo FROM empresas WHERE id=?", (empresa_id,))
-            resultado = self.cursor.fetchone()
-            if resultado and resultado[0]:
-                logo_path = resultado[0]
-                if os.path.exists(logo_path):
-                    try:
-                        logo = PDFImage(logo_path, width=120, height=50)  # ajuste o tamanho conforme o layout
-                        story.append(logo)
-                        story.append(Spacer(1, 10))
-                    except Exception as e:
-                        print(f"Erro ao carregar logo: {e}")
+          
 
             styles = getSampleStyleSheet()
             estilo_normal = styles["Normal"]
