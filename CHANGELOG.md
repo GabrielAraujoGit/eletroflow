@@ -7,8 +7,6 @@ Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## \[Unreleased\]
 
-
-
 ## [1.6.0] - 16/Out/25
 
 ### Added

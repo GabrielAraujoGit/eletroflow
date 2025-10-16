@@ -330,11 +330,12 @@ class SistemaPedidos:
         list_frame = ttk.LabelFrame(frame, text="Clientes Cadastrados", padding=10)
         list_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        cols = ('Razão Social', 'CNPJ', 'Cidade', 'Telefone')
+        cols = ('ID', 'Razão Social', 'CNPJ', 'Cidade', 'Telefone')
         self.tree_clientes = ttk.Treeview(list_frame, columns=cols, show='headings', height=12)
         for col in cols:
             self.tree_clientes.heading(col, text=col)
             self.tree_clientes.column(col, width=140, anchor='center')
+            self.tree_clientes.column('ID', width=0, stretch=False)
 
         scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.tree_clientes.yview)
         self.tree_clientes.configure(yscrollcommand=scrollbar.set)
@@ -461,8 +462,9 @@ class SistemaPedidos:
             for item in selecionados:
                 valores = self.tree_clientes.item(item, "values")
                 cliente_id = valores[0]
-                self.cursor.execute("DELETE FROM clientes WHERE cnpj=?", (cliente_id,))
-            
+                self.cursor.execute("SELECT * FROM clientes WHERE id=?", (cliente_id,))
+                
+                            
             self.conn.commit()
             self.carregar_clientes()
             messagebox.showinfo("Sucesso", f"{len(selecionados)} cliente(s) excluído(s) com sucesso!")
@@ -646,7 +648,7 @@ class SistemaPedidos:
                 WHERE razao_social LIKE ? OR cnpj LIKE ?
             ''', (f'%{filtro}%', f'%{filtro}%'))
         else:
-            self.cursor.execute('SELECT razao_social, cnpj, cidade, telefone FROM clientes')
+            self.cursor.execute('SELECT id, razao_social, cnpj, cidade, telefone FROM clientes')
 
         for row in self.cursor.fetchall():
             self.tree_clientes.insert('', 'end', values=row)
