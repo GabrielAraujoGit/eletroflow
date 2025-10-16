@@ -7,6 +7,40 @@ Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## \[Unreleased\]
 
+
+
+## [1.6.0] - 16/Out/25
+
+### Added
+* **Sistema de atualização automática integrado**:
+  - O aplicativo agora verifica novas versões diretamente do GitHub.
+  - Arquivo `updater.py` integrado ao `main.py`, com checagem de versão local e remota (`version.json`).
+  - Base para botão “Buscar Atualizações” dentro da interface.
+* **Suporte a logos de empresas emissoras**:
+  - Cada empresa cadastrada pode ter sua logo exibida nos PDFs.
+  - Suporte a diferentes tamanhos e proporções de imagem.
+
+### Changed
+* **Novo layout dos orçamentos (PDF)**:
+  - Reformulação visual completa com cores mais vibrantes nas tabelas.
+  - Aumento do tamanho da logo no cabeçalho.
+  - Margens e espaçamento otimizados.
+* **Ajustes nas abas de Clientes e Produtos**:
+  - Removidas colunas internas não exibidas na interface.
+  - Organização e carregamento de dados mais limpos e rápidos.
+* **Aba de Edição de Produtos e Clientes**:
+  - Melhor identificação e controle dos registros em edição.
+  - Lógica aprimorada para exclusões e atualizações.
+
+### Fixed
+* Correção na **exclusão de produtos e clientes**, que agora utiliza o identificador correto.
+* Correção em **edição de produtos**, que apresentava inconsistências após múltiplas atualizações.
+* Correção em **cálculo de impostos**, garantindo valores precisos no total geral.
+* Correção de pequenos erros visuais e ajustes no carregamento de tabelas.
+
+---
+
+
 ## [1.5.0] - 10/Out/25
 
 ### Added
