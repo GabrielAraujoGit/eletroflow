@@ -1803,7 +1803,7 @@ class SistemaPedidos:
 
             tabela = Table(linhas, colWidths=[70, 230, 50, 80, 80])
             tabela.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#00C3FF")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#DFDFDF")),
                 ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.HexColor("#F9F9F9")]),
                 ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
