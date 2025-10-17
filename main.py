@@ -107,7 +107,8 @@ class SistemaPedidos:
     def init_db(self):
         self.conn = sqlite3.connect('pedidos.db')
         self.cursor = self.conn.cursor()
-        # clientes
+
+        # --- Clientes ---
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS clientes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,13 +123,8 @@ class SistemaPedidos:
                 email TEXT
             )
         ''')
-        try:
-            self.cursor.execute("ALTER TABLE pedidos ADD COLUMN empresa_id INTEGER")
-            self.conn.commit()
-        except Exception:
-            # se já existir, ignora o erro
-            pass
-        # produtos
+
+        # --- Produtos ---
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS produtos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -144,7 +140,8 @@ class SistemaPedidos:
                 aliq_cofins REAL DEFAULT 0
             )
         ''')
-        # empresas (empresas que emitem orçamentos)
+
+        # --- Empresas (emissoras de orçamentos) ---
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS empresas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,8 +159,7 @@ class SistemaPedidos:
             )
         ''')
 
-        # pedidos
-        # pedidos
+        # --- Pedidos (orçamentos) ---
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS pedidos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -186,8 +182,18 @@ class SistemaPedidos:
             )
         ''')
 
-        # itens_pedido
-        # Itens do pedido (ligados ao número do orçamento)
+        # ✅ Garante que o campo empresa_id exista mesmo em bancos antigos
+        self.cursor.execute("PRAGMA table_info(pedidos)")
+        colunas = [c[1] for c in self.cursor.fetchall()]
+        if "empresa_id" not in colunas:
+            try:
+                self.cursor.execute("ALTER TABLE pedidos ADD COLUMN empresa_id INTEGER")
+                self.conn.commit()
+                print("[DB] Coluna 'empresa_id' adicionada com sucesso.")
+            except Exception as e:
+                print(f"[DB] Erro ao adicionar coluna empresa_id: {e}")
+
+        # --- Itens do pedido ---
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS pedido_itens (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -201,6 +207,7 @@ class SistemaPedidos:
         ''')
 
         self.conn.commit()
+
     
     def calcular_totais(self, itens):
         subtotal = sum(i['qtd'] * i['valor'] for i in itens)
@@ -461,7 +468,6 @@ class SistemaPedidos:
             return
 
         try:
-<<<<<<< HEAD
            for item in selecionados:
             valores = self.tree_clientes.item(item, "values")
             cliente_id = valores[0]
@@ -475,13 +481,6 @@ class SistemaPedidos:
             # Exclui o cliente
             self.cursor.execute("DELETE FROM clientes WHERE id=?", (cliente_id,))
                
-=======
-            for item in selecionados:
-                valores = self.tree_clientes.item(item, "values")
-                cliente_id = valores[0]
-                self.cursor.execute("DELETE FROM clientes WHERE id=?", (cliente_id,))
-            
->>>>>>> ca3af35a2b60c2e535142bf9162f3d609d7b42d7
             self.conn.commit()
             self.carregar_clientes()
             messagebox.showinfo("Sucesso", f"{len(selecionados)} cliente(s) excluído(s) com sucesso!")
