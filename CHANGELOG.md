@@ -7,6 +7,21 @@ Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## \[Unreleased\]
 
+## [1.6.1] - 17/Out/25
+
+### Added
+* **Inicialização do banco de dados `(init_db)` revisada:**:
+  - A criação das tabelas agora ocorre antes da verificação e inclusão de colunas adicionais.
+  - A adição do campo `empresa_id` na tabela `pedidos` foi reposicionada para garantir compatibilidade com bancos existentes.
+* **Aba Clientes e Produtos:**:
+  - IDs continuam armazenados internamente, mas agora são ocultados corretamente na interface `(Treeview)`.
+  - Colunas ajustadas para manter alinhamento e compatibilidade com funções de edição e exclusão.
+
+### Fixed
+* Correção definitiva do erro **“table pedidos has no column named empresa_id”**.
+* Correção em **exclusão de clientes**, que agora utiliza o ID corretamente e ignora clientes vinculados a orçamentos.
+* Melhor tratamento de exceções na inicialização do banco — evita falhas silenciosas e imprime avisos claros no console.
+
 ## [1.6.0] - 16/Out/25
 
 ### Added
