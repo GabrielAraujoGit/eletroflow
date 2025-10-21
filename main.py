@@ -273,7 +273,6 @@ class SistemaPedidos:
         # Lista de empresas
         frame_lista = ttk.Frame(aba)
         frame_lista.pack(fill="both", expand=True, padx=10, pady=10)
-
         colunas = ("ID", "Nome", "CNPJ", "Cidade", "Telefone")
         self.tree_empresas = ttk.Treeview(frame_lista, columns=colunas, show="headings")
         for col in colunas:
@@ -681,7 +680,6 @@ class SistemaPedidos:
         cliente = self.cursor.fetchone()
         if cliente:
             self.abrir_formulario_cliente(cliente)
-
     # ------------------- Produtos -------------------
     def criar_aba_produtos(self):
         frame = ttk.Frame(self.notebook)
@@ -1777,7 +1775,7 @@ class SistemaPedidos:
             # ======== CABEÇALHO ========
             logo_path = logo_emp if os.path.exists(logo_emp) else None
             if logo_path:
-                img = PDFImage(logo_path, width=100, height=40)
+                img = PDFImage(logo_path, width=100, height=35)
             else:
                 img = Paragraph("<b>Sem Logo</b>", estilo_normal)
 
