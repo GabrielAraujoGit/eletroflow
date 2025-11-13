@@ -1,9 +1,12 @@
 # EletroFlow — Sistema Interno de Orçamentos
 
-**Versão atual:** v1.0.0  
-**Manutenção interna:** Área de TI / Sistemas
+[![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![Version](https://img.shields.io/badge/Version-v1.0.0-green)](#)
+[![License](https://img.shields.io/badge/License-Internal-yellow)](#)
+[![Status](https://img.shields.io/badge/Status-Maintenance-orange)](#)
+[![Last Update](https://img.shields.io/badge/Updated-Oct_2025-lightgrey)](#)
+[![Support](https://img.shields.io/badge/Support-TI_Eletrofrio-blueviolet)](#)
 
----
 
 ## 📋 Sumário  
 1. [Visão Geral](#visão-geral)  
