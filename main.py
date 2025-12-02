@@ -30,7 +30,6 @@ import requests
 from updater import verificar_atualizacao_visual
 from buscar import buscar_cnpj
 
-
 def formatar_cnpj(cnpj):
     c = ''.join(filter(str.isdigit, str(cnpj)))
     if len(c) == 14:
